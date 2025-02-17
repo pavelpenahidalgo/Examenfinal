@@ -1,0 +1,54 @@
+name: conexion con MySQL
+
+on:
+  push:
+    branches:
+      - depelop
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: mysql_data
+          MYSQL_USER: user
+          MYSQL_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+        steps:
+            - name: Clonar repositorio
+              uses: actions/checkout@v4
+      
+            - name: Configurar nodejs
+              uses: actions/setup-node@v4
+              with:
+                node-version: '18'
+      
+            - name: Instalar dependencias...
+              run: npm install
+      
+            - name: Compilar proyecto...
+              run: npm run build
+      
+            - name: Conectandome a aws...
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: us-east-1
+            
+            - name: Validar conexion aws...
+              run: aws s3 ls
+            
+            - name: Sync carpeta front en bucket..
+              run: aws s3 sync build/ s3://bucket-codigo-backup/fernando/actions/codigo/ --delete
+      
