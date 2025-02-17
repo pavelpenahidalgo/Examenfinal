@@ -1,23 +1,44 @@
-name: Deploy to Kubernetes
+name: CI with MySQL
 
 on:
   push:
     branches:
-      - main
+      - depelop
+  pull_request:
+    branches:
+      - develop
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: mysql_data
+          MYSQL_USER: user
+          MYSQL_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
+      - name: Set up Docker Compose
+        run: docker-compose up -d
 
-      - name: Deploy to Kubernetes
+      - name: Wait for MySQL to be ready
         run: |
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
-        env:
-          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+          while ! docker exec mysql mysqladmin --user=root --password=root --host=127.0.0.1 ping --silent &> /dev/null; do
+              echo "esperando a que mysql esté listo..."
+              sleep 2
+          done
+
+      - name: Run tests
+        run: |
+          # Aquí puedes ejecutar tus pruebas o scripts que necesiten la base de datos
+          echo "Running tests..."
