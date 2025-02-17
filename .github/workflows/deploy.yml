@@ -1,4 +1,4 @@
-name: CI with MySQL
+name: conexion con MySQL
 
 on:
   push:
@@ -28,10 +28,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Docker Compose
+      - name: configurando Docker Compose
         run: docker-compose up -d
 
-      - name: Wait for MySQL to be ready
+      - name: esperando a que mysql esté listo
         run: |
           while ! docker exec mysql mysqladmin --user=root --password=root --host=127.0.0.1 ping --silent &> /dev/null; do
               echo "esperando a que mysql esté listo..."
